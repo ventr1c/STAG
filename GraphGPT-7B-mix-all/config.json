@@ -1,0 +1,39 @@
+{
+  "_name_or_path": "Vicuna-7b-v1.5",
+  "architectures": [
+    "GraphLlamaForCausalLM"
+  ],
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "freeze_graph_mlp_adapter": false,
+  "graph_hidden_size": 384,
+  "graph_select_layer": -2,
+  "graph_tower": "clip_gt_arxiv",
+  "hidden_act": "silu",
+  "hidden_size": 4096,
+  "initializer_range": 0.02,
+  "intermediate_size": 11008,
+  "max_position_embeddings": 4096,
+  "max_sequence_length": 16384,
+  "model_type": "GraphLlama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 32,
+  "num_key_value_heads": 32,
+  "pad_token_id": 0,
+  "pretrain_graph_model_path": "/root/autodl-tmp/GraphGPT/text-graph-grounding/res/ogbn-arxiv",
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-05,
+  "rope_scaling": {
+    "factor": 4.0,
+    "type": "linear"
+  },
+  "sep_graph_conv_front": false,
+  "tie_word_embeddings": false,
+  "torch_dtype": "float32",
+  "transformers_version": "4.31.0",
+  "tune_graph_mlp_adapter": true,
+  "use_cache": false,
+  "use_graph_proj": true,
+  "use_graph_start_end": true,
+  "vocab_size": 32003
+}

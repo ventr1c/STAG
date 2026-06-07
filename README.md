@@ -1,15 +1,12 @@
-# Anonymous Reproducibility Package
+# Trojaning the Alignment: Stealthy Backdoor Attacks against Graph Foundation Models
 
-This repository contains anonymized code, configurations, and reproduction
-instructions for the submitted paper, "Trojaning the Alignment: Stealthy
-Backdoor Attacks against Graph Foundation Models." It is prepared for
-triple-blind review. Author names, affiliations, funding information, and
-non-anonymous links are omitted.
+This repository provides an anonymized implementation and reproduction
+instructions for the submitted paper "Trojaning the Alignment: Stealthy
+Backdoor Attacks against Graph Foundation Models."
 
-This repository is intended to support reproducibility. It contains dataset
-preprocessing details, baseline adaptation notes, and commands for reproducing
-the main experiments. It should not be read as an additional appendix to the
-paper.
+The repository includes code, configuration notes, dataset preprocessing
+details, baseline adaptations, defense settings, and prompt templates needed to
+reproduce the experiments.
 
 ## Contents
 
@@ -20,9 +17,9 @@ paper.
 - [Baselines and Defenses](#baselines-and-defenses)
 - [Evaluation Protocol](#evaluation-protocol)
 - [Run the Attack](#run-the-attack)
+- [Trigger-Text Generation Prompts](#trigger-text-generation-prompts)
 - [Evaluate GraphCLIP](#evaluate-graphclip)
 - [Evaluate GraphGPT](#evaluate-graphgpt)
-- [Anonymity Checklist](#anonymity-checklist)
 
 ## Project Overview
 
@@ -157,6 +154,34 @@ Generated artifacts include:
 - `backdoor_res/<dataset>/soft_prompt_step1.pt`;
 - poisoned graph encoder checkpoints and logs.
 
+## Trigger-Text Generation Prompts
+
+We generate readable trigger-node text by prompting an LLM with the original
+node summary and the target-class description. The prompt template used in the
+experiments is:
+
+```text
+Task:
+Generate a paper summary and context analysis for a fictional research paper
+node in Markdown format. This paper should belong to {target_class_text}.
+
+Inputs:
+- Template Node Summary:
+  {original_summary}
+- Category Description:
+  {target_class_description}
+
+Requirements:
+1. The new node must belong to the category described in Category Description.
+2. The modified summary should preserve several keywords from the original
+   summary, but it does not need to retain many of them.
+3. The generated node should plausibly reference the original node.
+4. Generate the text directly; no explanation is needed.
+```
+
+An example original summary and generated trigger-node text are provided in
+`prompts/graph_trigger_text_examples.md`.
+
 ## Evaluate GraphCLIP
 
 Use `test_soft_prompt_backdoor_attack.py` to evaluate a poisoned GraphCLIP
@@ -231,18 +256,3 @@ plots and stealthiness measurements used in the paper, including embedding
 closure and trigger-stealthiness analysis. These scripts are included for
 reproducibility only and do not introduce additional claims beyond the submitted
 paper.
-
-## Anonymity Checklist
-
-Before submitting or sharing this repository for review, verify that:
-
-- author names, emails, affiliations, and funding information are absent;
-- non-anonymous Git remotes and commit metadata are removed or scrubbed;
-- local absolute paths are replaced with placeholders such as `/path/to/...`;
-- configuration files do not contain institutional or user-specific paths;
-- generated logs do not contain usernames, hostnames, or private paths;
-- README files and comments do not refer to private repositories, preprints, or
-  author-identifying resources.
-
-After review, citation metadata, acknowledgments, and permanent public links can
-be restored in the camera-ready version if the paper is accepted.

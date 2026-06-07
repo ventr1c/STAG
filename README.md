@@ -1,6 +1,6 @@
 # Trojaning the Alignment: Stealthy Backdoor Attacks against Graph Foundation Models
 
-Official implementation for the submitted paper "Trojaning the Alignment: Stealthy
+Implementation for the submitted paper "Trojaning the Alignment: Stealthy
 Backdoor Attacks against Graph Foundation Models."
 
 ## Contents
@@ -33,8 +33,6 @@ Backdoor Attacks against Graph Foundation Models."
 - `graphgpt/`: GraphGPT training and evaluation code, model adapters, and graph
   layers.
 - `text-graph-grounding/`: supporting graph-text grounding modules.
-- `analysis_out/`: scripts used for embedding-closure and stealthiness
-  analysis.
 - `processed_data/`: expected location for preprocessed graph datasets.
 - `backdoor_res/`: default output directory for learned triggers, soft prompts,
   poisoned checkpoints, and logs.
@@ -86,7 +84,7 @@ inputs for aligner-style evaluations.
 
 Victim checkpoints should be placed under `checkpoints/` or `backdoor_res/`
 according to the command-line arguments below. Replace all placeholder paths
-with local anonymous paths before running.
+with local paths before running.
 
 ## Baselines and Defenses
 
@@ -203,8 +201,7 @@ python test_soft_prompt_backdoor_attack.py \
   --seed 42
 ```
 
-Set `--defense_method` to `none`, `prune`, or `od`. DOMINANT-based structural
-analysis is provided in the analysis scripts under `analysis_out/`.
+Set `--defense_method` to `none`, `prune`, or `od`.
 
 ## Evaluate GraphGPT
 
@@ -243,11 +240,3 @@ python test_backdoor_gnn.py \
   --target_class 2 \
   --seed 42
 ```
-
-## Analysis Scripts
-
-The `analysis_out/` directory contains scripts for reproducing the diagnostic
-plots and stealthiness measurements used in the paper, including embedding
-closure and trigger-stealthiness analysis. These scripts are included for
-reproducibility only and do not introduce additional claims beyond the submitted
-paper.

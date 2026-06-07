@@ -1,72 +1,168 @@
-# Trojaning the Alignment: Stealthy Backdoor Attacks against Graph Foundation Models
+# Anonymous Reproducibility Package
 
-This is the official implementation of "Trojaning the Alignment: Stealthy Backdoor Attacks against Graph Foundation Models". This repository demonstrates a dual-modality backdoor attack against GraphCLIP and GraphGPT. 
+This repository contains anonymized code, configurations, and reproduction
+instructions for the submitted paper, "Trojaning the Alignment: Stealthy
+Backdoor Attacks against Graph Foundation Models." It is prepared for
+triple-blind review. Author names, affiliations, funding information, and
+non-anonymous links are omitted.
+
+This repository is intended to support reproducibility. It contains dataset
+preprocessing details, baseline adaptation notes, and commands for reproducing
+the main experiments. It should not be read as an additional appendix to the
+paper.
 
 ## Contents
-- [Project File Overview](#project-file-overview)
+
+- [Project Overview](#project-overview)
 - [Environment Setup](#environment-setup)
-- [Step 1: Run the Dual Attack (Required for Both Victims)](#step-1)
-- [Step 2: GraphCLIP - Run the Soft-Prompt Backdoor Test](#step-2)
-- [Step 3: GraphGPT - Fine-Tune Then Test](#step-3)
-- [Tips](#tips)
+- [Datasets](#datasets)
+- [Victim GFMs](#victim-gfms)
+- [Baselines and Defenses](#baselines-and-defenses)
+- [Evaluation Protocol](#evaluation-protocol)
+- [Run the Attack](#run-the-attack)
+- [Evaluate GraphCLIP](#evaluate-graphclip)
+- [Evaluate GraphGPT](#evaluate-graphgpt)
+- [Anonymity Checklist](#anonymity-checklist)
 
-<a id="project-file-overview"></a>
 ## Project Overview
-- `dual_attack_cotraining.py`: Main entry for the dual-modality backdoor co-training pipeline.
-- `dual_backdoor_trainer.py`: Core training logic for trigger optimization, poisoning, and checkpoint saving.
-- `test_soft_prompt_backdoor_attack.py`: GraphCLIP-side evaluation (clean accuracy, ASR, optional defense).
-- `test_backdoor_gnn.py`: GraphGPT-side backdoor evaluation after alignment/fine-tuning.
-- `convert_to_graphgpt_format.py`, `merge_datasets.py`: Data conversion/merging utilities for GraphGPT workflows.
-- `data/`: Dataset loading, splitting, sampling, and dataset-specific loaders in `data/data_utils/`.
-- `graphclip/`: GraphCLIP model components and config files.
-- `graphgpt/`: GraphGPT training/evaluation code, model adapters, and graph-related layers.
-- `text-graph-grounding/`: Supporting text-graph grounding modules used by the project.
-- `processed_data/`: Preprocessed graph datasets (for example `processed_data/cora.pt`).
-- `backdoor_res/`: Attack outputs and logs (triggers, soft prompts, poisoned models, test logs).
-- `checkpoints/`: Fine-tuned/alignment checkpoints (including GraphGPT stage outputs).
-- `requirements.txt`: Python dependency list.
-- `tests/`: API/utility test scripts.
 
-<a id="environment-setup"></a>
+- `dual_attack_cotraining.py`: main entry for optimizing the graph trigger and
+  text-side soft prompt.
+- `dual_backdoor_trainer.py`: training logic for trigger optimization,
+  poisoning, checkpoint saving, and artifact generation.
+- `test_soft_prompt_backdoor_attack.py`: GraphCLIP-side evaluation for clean
+  accuracy, attack success rate, and optional defenses.
+- `test_backdoor_gnn.py`: GraphGPT-side evaluation after graph-text alignment
+  or fine-tuning.
+- `convert_to_graphgpt_format.py`, `merge_datasets.py`: data conversion and
+  merging utilities for GraphGPT-style instruction data.
+- `data/`: dataset loading, splitting, sampling, and dataset-specific loaders.
+- `graphclip/`: GraphCLIP model components and configuration files.
+- `graphgpt/`: GraphGPT training and evaluation code, model adapters, and graph
+  layers.
+- `text-graph-grounding/`: supporting graph-text grounding modules.
+- `analysis_out/`: scripts used for embedding-closure and stealthiness
+  analysis.
+- `processed_data/`: expected location for preprocessed graph datasets.
+- `backdoor_res/`: default output directory for learned triggers, soft prompts,
+  poisoned checkpoints, and logs.
+- `checkpoints/`: expected location for alignment and victim-model checkpoints.
 
 ## Environment Setup
+
+Create an isolated environment and install dependencies:
+
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows PowerShell: .venv\Scripts\Activate.ps1
+source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Prerequisites:
-- Graph datasets saved in `processed_data/<dataset>.pt` (cora, citeseer, wikics, ogbn-arxiv, etc.).
-- Victim checkpoints inside `backdoor_res/` (GraphCLIP weights or GraphGPT base models).
-- Instruction JSONs for GraphGPT (e.g., `ogbn-arxiv_graphgpt_train.json`).
--  `checkpoint/stage_2` is the model trained by using backdoored GNN in GraphGPT. 
+The experiments were run with PyTorch, PyTorch Geometric, Transformers, and
+SBERT-compatible text encoders. Exact package versions are listed in
+`requirements.txt`.
 
-<a id="step-1"></a>
-## Step 1 - Run the Dual Attack (Required for Both Victims)
+## Datasets
+
+We evaluate on four text-attributed graph benchmarks used in the paper.
+Preprocessed files should be placed under `processed_data/<dataset>.pt`.
+
+| Dataset | Graph type | Node text used in experiments | Notes |
+| --- | --- | --- | --- |
+| `cora` | citation graph | paper text / keywords | small citation benchmark |
+| `citeseer` | citation graph | title / abstract | small citation benchmark |
+| `wikics` | Wikipedia article graph | article text | hyperlink graph |
+| `ogbn-arxiv` | citation graph | title / abstract | large-scale OGB benchmark |
+
+Following the paper, node texts are encoded with a frozen SBERT encoder
+(`all-MiniLM-L6-v2`) into 384-dimensional features. If raw text files are not
+already processed, use the loaders under `data/data_utils/` to regenerate the
+corresponding `processed_data/<dataset>.pt` files.
+
+## Victim GFMs
+
+The paper evaluates the following GFM settings. This repository provides
+executable GraphCLIP and GraphGPT pipelines, together with shared processed TAG
+inputs for aligner-style evaluations.
+
+| Victim | Paradigm | Relevant code |
+| --- | --- | --- |
+| GraphCLIP | LLM-as-aligner | `graphclip/`, `test_soft_prompt_backdoor_attack.py` |
+| GraphGPT | LLM-as-predictor | `graphgpt/`, `test_backdoor_gnn.py` |
+| G2P2-style aligner | LLM-as-aligner | processed TAG inputs and graph-text alignment utilities |
+
+Victim checkpoints should be placed under `checkpoints/` or `backdoor_res/`
+according to the command-line arguments below. Replace all placeholder paths
+with local anonymous paths before running.
+
+## Baselines and Defenses
+
+The paper compares with three adapted backdoor baselines.
+
+| Method | Type | Adaptation used here |
+| --- | --- | --- |
+| CrossBA | graph-side backdoor | applied to trigger-attached TAG subgraphs |
+| PoisonPrompt | text-side backdoor | applied to node text / prompt inputs |
+| BadCLIP | multimodal CLIP backdoor | adapted to the graph-text alignment setting |
+
+The paper also evaluates three defense settings.
+
+| Defense | Targeted signal |
+| --- | --- |
+| Prune | feature-level edge anomaly |
+| Outlier Detection (OD) | feature reconstruction anomaly |
+| DOMINANT | structural reconstruction anomaly |
+
+## Evaluation Protocol
+
+The default evaluation follows the paper:
+
+- train/validation/test split ratio: `6:2:2`;
+- default poison rate: `0.4`;
+- default trigger size: `8` trigger nodes;
+- clean utility metric: clean accuracy (ACC);
+- attack metric: attack success rate (ASR), the fraction of trigger-attached
+  test nodes classified into the target class;
+- default random seed: `42`.
+
+## Run the Attack
+
+The main attack script jointly optimizes the graph-side trigger and text-side
+soft prompt. The output is written to `backdoor_res/<dataset>/`.
+
 ```bash
-python dual_attack_cotraining.py 
-  --dataset cora 
-  --victim graphgpt
-  --device cuda 
-  --poison_rate 0.3 
-  --num_trigger_node 8
-  --soft_prompt_len 15
-  --target_class 2 
-  --epochs_text 20 
-  --epochs_gnn 15 
-  --output_dir backdoor_res/cora
+python dual_attack_cotraining.py \
+  --dataset cora \
+  --victim graphclip \
+  --device cuda \
+  --poison_rate 0.4 \
+  --trigger_node_num 8 \
+  --soft_prompt_len 20 \
+  --target_class 2 \
+  --epochs_text 8 \
+  --epochs_gnn 10 \
+  --epochs_trigger 3 \
+  --seed 42
 ```
-Switch `--victim` to `graphgpt` and adjust hyperparameters for other datasets. Artifacts (graph trigger, soft prompt, GraphStructureNet, poisoned checkpoint, logs) are saved under `backdoor_res/<run_name>/`.
 
+For GraphGPT-style experiments, set `--victim graphgpt`. For other datasets,
+replace `--dataset`, `--target_class`, and checkpoint paths accordingly.
 
+Generated artifacts include:
 
-<a id="step-2"></a>
+- `backdoor_res/<dataset>/<dataset>_graph_trigger.pt`;
+- `backdoor_res/<dataset>/graph_structure_net.pt`;
+- `backdoor_res/<dataset>/target_embedding.pt`;
+- `backdoor_res/<dataset>/soft_prompt_step1.pt`;
+- poisoned graph encoder checkpoints and logs.
 
-## Step 2 - GraphCLIP: Run the Soft-Prompt Backdoor Test
+## Evaluate GraphCLIP
 
-Use `test_soft_prompt_backdoor_attack.py` to evaluate the poisoned GraphCLIP checkpoint, soft prompt, and trigger that Step 1 produced. The script rebuilds the soft prompt, injects triggers into clean graphs, applies optional defenses, and reports both clean accuracy and ASR.
+Use `test_soft_prompt_backdoor_attack.py` to evaluate a poisoned GraphCLIP
+checkpoint, soft prompt, and graph trigger. The script reports clean accuracy
+and ASR, with optional defenses.
+
 ```bash
 python test_soft_prompt_backdoor_attack.py \
   --dataset cora \
@@ -83,48 +179,70 @@ python test_soft_prompt_backdoor_attack.py \
   --lm_head_path checkpoints/sbert_lm_head.pth \
   --trigger_source summary_text \
   --summary_file summary/summary-cora-modified.json \
-  --defense_method od
+  --defense_method none \
+  --seed 42
 ```
-- `--result_dir` should match the attack output folder that contains the GraphCLIP checkpoint, `graph_structure_net*.pth`, soft prompt weights, and target embedding.
-- `--defense_method` controls the inference defense (`od`, `prune`, or `none`). Dominant OD models are trained automatically when `od` is selected.
-- The clean/poison evaluation uses `processed_data/<dataset>.pt`; ensure it matches the dataset used in Step 1.
-- Results are logged to `soft_prompt_backdoor_test.log`, and intermediate trigger embeddings are stored for optional visualization.
 
-<a id="step-3"></a>
-## Step 3 - GraphGPT: Fine-Tune Then Test
-GraphGPT must ingest the poisoned soft prompt first. Run `graphgpt/train/train_graph.py` (Windows path: `graphgpt\train\train_graph.py`) with the checkpoint produced in Step鈥?:
+Set `--defense_method` to `none`, `prune`, or `od`. DOMINANT-based structural
+analysis is provided in the analysis scripts under `analysis_out/`.
+
+## Evaluate GraphGPT
+
+GraphGPT-style evaluation first aligns or fine-tunes the graph-language
+projector using the prepared graph instruction data, then evaluates the
+backdoored graph encoder.
+
+Example alignment command:
+
 ```bash
-python graphgpt/train/train_graph.py 
-  --model_name_or_path GraphGPT-7B-mix-all 
-  --graph_tower clip_gt_arxiv 
-  --data_path graphgpt/data/cora_graphgpt_train.json 
-  --graph_data_path processed_data/cora.pt 
-  --output_dir checkpoints/stage_2 
-  --pretrain_graph_model_path checkpoints/stage_2/cora_graph_projector/checkpoint
-  --pretrain_graph_mlp_adapter checkpoints/stage_2/cora_graph_projector/checkpoint.bin
-  --per_device_train_batch_size 1 
-  --gradient_accumulation_steps 16 
-  --num_train_epochs 3 
-  --learning_rate 2e-5 
+python graphgpt/train/train_graph.py \
+  --model_name_or_path /path/to/GraphGPT-7B-mix-all \
+  --graph_tower clip_gt_arxiv \
+  --data_path graphgpt/data/cora_graphgpt_train.json \
+  --graph_data_path processed_data/cora.pt \
+  --output_dir checkpoints/stage_2 \
+  --pretrain_graph_model_path checkpoints/stage_2/cora_graph_projector/checkpoint \
+  --pretrain_graph_mlp_adapter checkpoints/stage_2/cora_graph_projector/checkpoint.bin \
+  --per_device_train_batch_size 1 \
+  --gradient_accumulation_steps 16 \
+  --num_train_epochs 3 \
+  --learning_rate 2e-5 \
   --bf16 True
 ```
-After alignment, evaluate GraphGPT with the same testing script:
+
+Example backdoor evaluation command:
+
 ```bash
-python test_backdoor_gnn.py
-  --dataset cora
-  --device cuda
-  --pretrain_graph_model_path checkpoints/stage_2
-  --backdoor_model_path backdoor_res/cora/graphgpt_backdoor_model.pt
-  --graph_trigger_path backdoor_res/cora/cora_graph_trigger.pt
-  --graph_structure_net_path backdoor_res/cora/graph_structure_net.pt
-  --target_class 2
+python test_backdoor_gnn.py \
+  --dataset cora \
+  --device cuda \
+  --pretrain_graph_model_path checkpoints/stage_2 \
+  --backdoor_model_path backdoor_res/cora/graphgpt_backdoor_model.pt \
+  --graph_trigger_path backdoor_res/cora/cora_graph_trigger.pt \
+  --graph_structure_net_path backdoor_res/cora/graph_structure_net.pt \
+  --target_class 2 \
+  --seed 42
 ```
 
-<a id="tips"></a>
-## Tips
-- Adjust `--text_trigger_tokens`, `--num_trigger_node`, and `--poison_rate` for each dataset to balance ASR and clean performance.
-- All scripts accept `--seed` for reproducibility; logs are written alongside artifacts in `backdoor_res/`.
-- When onboarding a new dataset, regenerate `processed_data/<dataset>.pt` and prepare matching instruction JSON files for GraphGPT fine-tuning.
+## Analysis Scripts
 
+The `analysis_out/` directory contains scripts for reproducing the diagnostic
+plots and stealthiness measurements used in the paper, including embedding
+closure and trigger-stealthiness analysis. These scripts are included for
+reproducibility only and do not introduce additional claims beyond the submitted
+paper.
 
+## Anonymity Checklist
 
+Before submitting or sharing this repository for review, verify that:
+
+- author names, emails, affiliations, and funding information are absent;
+- non-anonymous Git remotes and commit metadata are removed or scrubbed;
+- local absolute paths are replaced with placeholders such as `/path/to/...`;
+- configuration files do not contain institutional or user-specific paths;
+- generated logs do not contain usernames, hostnames, or private paths;
+- README files and comments do not refer to private repositories, preprints, or
+  author-identifying resources.
+
+After review, citation metadata, acknowledgments, and permanent public links can
+be restored in the camera-ready version if the paper is accepted.

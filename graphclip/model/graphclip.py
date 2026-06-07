@@ -13,7 +13,7 @@ def mean_pooling(model_output, attention_mask):
 
 
 text_ids = {
-    'tiny': '/root/lanyun-tmp/GraphCLIP/all-MiniLM-L6-v2',
+    'tiny': 'sentence-transformers/all-MiniLM-L6-v2',
     'sbert':  'sentence-transformers/multi-qa-distilbert-cos-v1', #'sentence-transformers/all-MiniLM-L6-v2', #'sentence-transformers/multi-qa-distilbert-cos-v1',
     'e5': 'intfloat/e5-base-v2',
     'deberta': 'microsoft/deberta-v3-base',

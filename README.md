@@ -1,12 +1,7 @@
 # Trojaning the Alignment: Stealthy Backdoor Attacks against Graph Foundation Models
 
-This repository provides an anonymized implementation and reproduction
-instructions for the submitted paper "Trojaning the Alignment: Stealthy
+Official implementation for the submitted paper "Trojaning the Alignment: Stealthy
 Backdoor Attacks against Graph Foundation Models."
-
-The repository includes code, configuration notes, dataset preprocessing
-details, baseline adaptations, defense settings, and prompt templates needed to
-reproduce the experiments.
 
 ## Contents
 

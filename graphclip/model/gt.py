@@ -28,7 +28,7 @@ class GPS(torch.nn.Module):
         self.convs = ModuleList()
         for l in range(num_layers):
 
-            conv = GPSConv(channels, GATConv(channels,channels), heads=8,
+            conv = GPSConv(channels, SAGEConv(channels, channels), heads=8,
                            attn_type=attn_type, attn_kwargs=attn_kwargs)
             self.convs.append(conv)
 
@@ -67,7 +67,7 @@ class GPS(torch.nn.Module):
         pe = g.pe
         x = g.x
         edge_index = g.edge_index
-        batch = torch.zeros(x.shape[0], dtype=torch.long)
+        batch = torch.zeros(x.shape[0], dtype=torch.long, device=x.device)
         center_idx = g.root_n_index
         if hasattr(g, "weight"):
             weight = g.weight
@@ -76,7 +76,10 @@ class GPS(torch.nn.Module):
         x_pe = self.pe_norm(pe)
         x = torch.cat((self.node_emb(x.squeeze(-1)), self.pe_lin(x_pe)), 1)
         for conv in self.convs:
-            x = conv(x, edge_index, edge_attr=weight)
+            if weight is not None:
+                x = conv(x, edge_index, edge_attr=weight)
+            else:
+                x = conv(x, edge_index)
 
         # mean pool
         g_x = global_mean_pool(x, batch)
